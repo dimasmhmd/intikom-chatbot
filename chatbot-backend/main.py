@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import pdfplumber
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
@@ -78,6 +80,55 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
 
+@app.get("/api/files")
+async def list_files():
+    """Endpoint untuk mendapatkan daftar file PDF yang ada di Storage"""
+    try:
+        if not AZURE_STORAGE_CONNECTION_STRING:
+            raise HTTPException(status_code=500, detail="Konfigurasi Storage belum ada.")
+            
+        blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+        container_client = blob_service_client.get_container_client(CONTAINER_NAME)
+        
+        blobs = container_client.list_blobs()
+        file_list = [{"filename": blob.name, "size": blob.size} for blob in blobs]
+        
+        return {"files": file_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/files/{filename}")
+async def delete_file(filename: str):
+    """Endpoint untuk menghapus file fisik DAN memorinya di AI Search"""
+    try:
+        # 1. Menghapus file fisik dari Azure Blob Storage
+        blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+        blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=filename)
+        blob_client.delete_blob()
+        
+        # 2. Menghapus memori (teks vektor) dari Azure AI Search
+        search_client = SearchClient(
+            endpoint=AZURE_SEARCH_ENDPOINT,
+            index_name=INDEX_NAME,
+            credential=AzureKeyCredential(AZURE_SEARCH_KEY)
+        )
+        
+        # Mencari semua potongan dokumen (chunk) yang berasal dari file ini
+        results = search_client.search(search_text=filename, select="id, metadata")
+        docs_to_delete = []
+        for doc in results:
+            # LangChain menyimpan metadata sumber di dalam string JSON
+            if filename in doc.get("metadata", ""):
+                docs_to_delete.append({"id": doc["id"]})
+                
+        # Jika ada potongan memori yang ditemukan, hapus semuanya
+        if docs_to_delete:
+            search_client.delete_documents(documents=docs_to_delete)
+        
+        return {"message": f"File {filename} berhasil dihapus dari Storage dan memori AI."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/upload")
 async def upload_pdf(files: List[UploadFile] = File(...)):
     try:
@@ -138,7 +189,13 @@ async def chat(request: ChatRequest):
         history = session_history[request.session_id]
 
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "Anda adalah asisten AI dari Intikom. Jawablah menggunakan konteks yang diberikan secara profesional. Konteks: {context}"),
+            ("system", """Anda adalah asisten AI resmi dari PT Intikom Berlian Mustika.
+Tugas Anda HANYA menjawab pertanyaan berdasarkan konteks dokumen yang diberikan di bawah ini.
+JIKA pertanyaan pengguna sama sekali tidak ada hubungannya dengan konteks dokumen (misalnya meminta kode SQL, resep, berita, dll), Anda WAJIB MENOLAK untuk menjawab.
+Gunakan kalimat penolakan yang sopan seperti: "Maaf, saya adalah asisten virtual PT Intikom. Saya hanya diprogram untuk menjawab informasi seputar layanan dan profil perusahaan Intikom."
+JANGAN PERNAH menggunakan pengetahuan bawaan Anda sendiri di luar konteks ini.
+
+Konteks dokumen: {context}"""),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ])
