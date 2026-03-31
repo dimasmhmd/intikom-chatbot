@@ -69,28 +69,49 @@ function ChatWidget() {
   const formatAIMessage = (text) => {
     if (!text) return null;
     
-    // Pisahkan berdasarkan baris baru (\n)
-    return text.split('\n').map((line, i) => {
-      // Jika baris kosong (hanya enter), beri jarak vertikal
-      if (line.trim() === '') {
+    // 1. Pre-processing: Deteksi list yang menyambung di satu baris dan paksa turun baris
+    // Mencari karakter apapun yang diikuti spasi dan langsung diikuti pola angka (1.) atau bullet (-)
+    let processedText = text.replace(/(\S)\s+(?=\d+\.\s|- \s|\* \s)/g, "$1\n");
+    
+    // 2. Pisahkan teks menjadi array baris berdasarkan enter (\n)
+    return processedText.split('\n').map((line, i) => {
+      const trimmedLine = line.trim();
+      
+      if (trimmedLine === '') {
         return <div key={i} className="h-2"></div>;
       }
       
-      // Deteksi otomatis jika baris ini adalah List (berawalan angka atau strip)
-      const isList = /^(\d+\.|-|\*)\s/.test(line.trim());
+      // Deteksi apakah baris ini adalah list item
+      const listMatch = trimmedLine.match(/^(\d+\.|-|\*)\s/);
+      const isList = !!listMatch;
       
       // Pisahkan teks untuk mencari format Bold (**teks**)
-      const parts = line.split(/(\*\*.*?\*\*)/g);
+      const parts = trimmedLine.split(/(\*\*.*?\*\*)/g);
       
       return (
-        <div key={i} className={`mb-1.5 leading-relaxed ${isList ? 'ml-4 pl-1 border-l-2 border-[#14429A]/20' : ''}`}>
-          {parts.map((part, j) => {
-            // Jika teks diapit tanda **, buat menjadi Bold
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={j} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
-            }
-            return <span key={j}>{part}</span>;
-          })}
+        <div key={i} className={`mb-2 leading-relaxed ${isList ? 'pl-6 relative' : ''}`}>
+          {/* Render bullet atau angka khusus dengan margin dan warna biru korporat */}
+          {isList && (
+            <span className="absolute left-1 top-0 font-bold text-[#14429A] tracking-tighter">
+              {listMatch[0]}
+            </span>
+          )}
+          
+          <span className="text-gray-800 text-[14px]">
+            {parts.map((part, j) => {
+              let textPart = part;
+              // Hilangkan angka/bullet dari teks bagian pertama karena sudah di-render terpisah di atas
+              if (isList && j === 0) {
+                textPart = textPart.replace(/^(\d+\.|-|\*)\s/, '');
+              }
+              
+              // Render teks tebal
+              if (textPart.startsWith('**') && textPart.endsWith('**')) {
+                return <strong key={j} className="font-semibold text-gray-900">{textPart.slice(2, -2)}</strong>;
+              }
+              return <span key={j}>{textPart}</span>;
+            })}
+          </span>
         </div>
       );
     });
