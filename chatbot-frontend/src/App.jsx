@@ -122,7 +122,7 @@ function ChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
       {isOpen && (
-        <div className={`absolute bottom-20 right-0 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${isExpanded ? 'w-[calc(100vw-3rem)] sm:w-[700px] md:w-[800px] h-[calc(100vh-8rem)] max-h-[800px]' : 'w-[340px] sm:w-[400px] h-[550px]'}`}>
+        <div className={`bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 ${isExpanded ? 'fixed inset-0 z-[100] w-full h-full rounded-none' : 'absolute bottom-20 right-0 w-[340px] sm:w-[400px] h-[550px] rounded-2xl origin-bottom-right'}`}>
           
           <div className="bg-[#14429A] p-4 text-white flex justify-between items-center shadow-md z-10">
             <div className="flex items-center gap-3">
