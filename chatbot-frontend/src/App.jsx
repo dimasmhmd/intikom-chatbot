@@ -65,10 +65,41 @@ function ChatWidget() {
     }
   };
 
+  // Fungsi khusus untuk merapikan format teks output dari AI
+  const formatAIMessage = (text) => {
+    if (!text) return null;
+    
+    // Pisahkan berdasarkan baris baru (\n)
+    return text.split('\n').map((line, i) => {
+      // Jika baris kosong (hanya enter), beri jarak vertikal
+      if (line.trim() === '') {
+        return <div key={i} className="h-2"></div>;
+      }
+      
+      // Deteksi otomatis jika baris ini adalah List (berawalan angka atau strip)
+      const isList = /^(\d+\.|-|\*)\s/.test(line.trim());
+      
+      // Pisahkan teks untuk mencari format Bold (**teks**)
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      
+      return (
+        <div key={i} className={`mb-1.5 leading-relaxed ${isList ? 'ml-4 pl-1 border-l-2 border-[#14429A]/20' : ''}`}>
+          {parts.map((part, j) => {
+            // Jika teks diapit tanda **, buat menjadi Bold
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={j} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+            }
+            return <span key={j}>{part}</span>;
+          })}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[340px] sm:w-96 h-[500px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right">
+        <div className="absolute bottom-20 right-0 w-[340px] sm:w-[400px] h-[550px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right">
           
           <div className="bg-[#14429A] p-4 text-white flex justify-between items-center shadow-md z-10">
             <div className="flex items-center gap-3">
@@ -90,12 +121,13 @@ function ChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#f8fafc]">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden shadow-sm ${msg.role === 'user' ? 'bg-gray-200 text-gray-500' : 'bg-white border border-gray-100'}`}>
-                    {msg.role === 'user' ? <User size={14} /> : <img src="/image_69e9c5.png" alt="Bot" className="w-full h-full object-contain p-1" />}
+                <div className={`flex gap-3 max-w-[88%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden shadow-sm ${msg.role === 'user' ? 'bg-gray-200 text-gray-500' : 'bg-white border border-gray-100'}`}>
+                    {msg.role === 'user' ? <User size={15} /> : <img src="/image_69e9c5.png" alt="Bot" className="w-full h-full object-contain p-1" />}
                   </div>
-                  <div className={`p-3.5 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-[#14429A] text-white rounded-tr-sm' : 'bg-white text-gray-700 rounded-tl-sm border border-gray-100'}`}>
-                    {msg.text}
+                  <div className={`p-4 rounded-2xl text-[14.5px] shadow-sm ${msg.role === 'user' ? 'bg-[#14429A] text-white rounded-tr-sm whitespace-pre-wrap' : 'bg-white text-gray-700 rounded-tl-sm border border-gray-100'}`}>
+                    {/* Menggunakan fungsi formatter untuk memproses pesan AI */}
+                    {msg.role === 'ai' ? formatAIMessage(msg.text) : msg.text}
                   </div>
                 </div>
               </div>
@@ -103,9 +135,9 @@ function ChatWidget() {
 
             {isTyping && (
               <div className="flex justify-start">
-                <div className="flex gap-2.5 max-w-[85%]">
-                  <div className="w-7 h-7 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center mt-1 overflow-hidden"><img src="/image_69e9c5.png" alt="Bot" className="w-full h-full object-contain p-1" /></div>
-                  <div className="p-3.5 px-4 rounded-2xl bg-white text-gray-800 rounded-tl-sm border border-gray-100 shadow-sm flex items-center gap-1.5">
+                <div className="flex gap-3 max-w-[85%]">
+                  <div className="w-8 h-8 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center mt-1 overflow-hidden"><img src="/image_69e9c5.png" alt="Bot" className="w-full h-full object-contain p-1" /></div>
+                  <div className="p-4 px-5 rounded-2xl bg-white text-gray-800 rounded-tl-sm border border-gray-100 shadow-sm flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
                   </div>
                 </div>
@@ -473,7 +505,6 @@ function LandingPage({ onOpenAdmin }) {
             <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 text-center md:text-left">
               <p>&copy; {new Date().getFullYear()} PT. Intikom Berlian Mustika. All rights reserved.</p>
               <span className="hidden md:inline text-white/20">|</span>
-              {/* TOMBOL RAHASIA MENUJU ADMIN DIPINDAH KE KIRI */}
               <button onClick={onOpenAdmin} className="hover:text-white transition-colors flex items-center gap-1 font-semibold text-blue-300">
                 <ShieldAlert size={12}/> Admin Portal
               </button>
