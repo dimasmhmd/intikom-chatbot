@@ -120,9 +120,9 @@ function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-6 right-6 left-6 z-50 font-sans flex flex-col items-end pointer-events-none">
       {isOpen && (
-        <div className={`bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 absolute right-0 origin-bottom-right rounded-2xl ${isExpanded ? 'bottom-20 w-[calc(100vw-3rem)] h-[calc(100vh-8rem)] z-[100]' : 'bottom-20 w-[340px] sm:w-[400px] h-[550px] max-h-[calc(100vh-8rem)] z-50'}`}>
+        <div className={`pointer-events-auto bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right rounded-2xl mb-6 ${isExpanded ? 'w-full h-[calc(100vh-8rem)] z-[100]' : 'w-[340px] sm:w-[400px] h-[550px] max-h-[calc(100vh-8rem)] z-50'}`}>
           
           <div className="bg-[#14429A] p-4 text-white flex justify-between items-center shadow-md z-10">
             <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ function ChatWidget() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.25)] transition-all duration-300 z-50 hover:scale-105 active:scale-95 ${isOpen ? 'bg-[#E01E26] rotate-90' : 'bg-[#14429A] rotate-0'}`}
+        className={`pointer-events-auto flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.25)] transition-all duration-300 z-50 hover:scale-105 active:scale-95 ${isOpen ? 'bg-[#E01E26] rotate-90' : 'bg-[#14429A] rotate-0'}`}
       >
         {isOpen ? <X className="text-white" size={28} /> : <MessageSquare className="text-white" size={26} />}
       </button>
