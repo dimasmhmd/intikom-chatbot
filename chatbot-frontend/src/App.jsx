@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronDown, Search, Menu, X, MessageSquare, Send, 
   User, Paperclip, Loader2, FileText, Trash2, ArrowRight,
-  ShieldAlert, LogOut, Database, AlertCircle, CheckCircle2
+  ShieldAlert, LogOut, Database, AlertCircle, CheckCircle2,
+  Maximize2, Minimize2
 } from 'lucide-react';
 
 // Ganti dengan URL Backend Hugging Face atau Localhost Anda
@@ -11,6 +12,7 @@ const API_BASE_URL = "https://dimasmhmd-intikom-backend.hf.space/api";
 // --- KOMPONEN CHATBOT WIDGET (KHUSUS USER) ---
 function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -34,7 +36,7 @@ function ChatWidget() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isOpen, isTyping]);
+  }, [messages, isOpen, isTyping, isExpanded]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -120,7 +122,7 @@ function ChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[340px] sm:w-[400px] h-[550px] bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right">
+        <div className={`absolute bottom-20 right-0 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${isExpanded ? 'w-[calc(100vw-3rem)] sm:w-[700px] md:w-[800px] h-[calc(100vh-8rem)] max-h-[800px]' : 'w-[340px] sm:w-[400px] h-[550px]'}`}>
           
           <div className="bg-[#14429A] p-4 text-white flex justify-between items-center shadow-md z-10">
             <div className="flex items-center gap-3">
@@ -134,9 +136,14 @@ function ChatWidget() {
                 </p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/20 rounded-md transition duration-200">
-              <X size={20} />
-            </button>
+            <div className="flex gap-1 items-center">
+              <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 hover:bg-white/20 rounded-md transition duration-200" title={isExpanded ? "Perkecil" : "Perbesar"}>
+                {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
+              <button onClick={() => { setIsOpen(false); setIsExpanded(false); }} className="p-1.5 hover:bg-white/20 rounded-md transition duration-200" title="Tutup Chat">
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-5 bg-[#f8fafc]">
